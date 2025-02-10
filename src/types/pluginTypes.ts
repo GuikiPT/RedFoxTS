@@ -24,8 +24,8 @@ export interface Plugin {
   name: string;
   description: string;
   author: string;
-  commands: PluginCommand<unknown>[];
-  events: PluginEvent<unknown[]>[];
+  commands: PluginCommand[];
+  events: PluginEvent[];
   loadOptions?: PluginLoadOptions;
 }
 
