@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "nodenext",
+    "module": "CommonJS",
     "target": "esnext",
     "rootDir": "./src",
     "outDir": "./dist",
@@ -8,6 +8,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "Node",
     "resolveJsonModule": true,
     "allowJs": true,
     "strictPropertyInitialization": false,

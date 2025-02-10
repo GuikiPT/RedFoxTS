@@ -1,11 +1,10 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 import { loadPlugins } from './pluginLoader';
 import './common/logger';
-import figlet from 'figlet';
-import { promisify } from 'util';
 import chalk from "chalk";
 import pkg from '../package.json';
 import dotenv from 'dotenv';
+import { getFigletText } from './common/figlet';
 dotenv.config();
 
 const client = new Client({
@@ -16,14 +15,11 @@ const client = new Client({
   ],
 });
 
-
-const figletAsync = promisify(figlet);
-
 async function main() {
   try {
-
-    const banner = await figletAsync('RedFox');
-    process.stdout.write(chalk.bold(chalk.keyword('orange')(banner) + '\n'));
+    const figletString = await getFigletText('RedFox');
+    
+    process.stdout.write(chalk.bold(chalk.keyword('orange')(figletString) + '\n'));
     process.stdout.write(chalk.bold(chalk.keyword('orange')(`🦊 Version ${pkg.version} | Author: ${pkg.author} 🦊\n\n`)));
   } catch (err) {
     console.error(`Error generating banner: ${err}`);

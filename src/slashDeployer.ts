@@ -1,271 +1,194 @@
-
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
-import { Client, GatewayIntentBits, REST, Routes } from 'discord.js';
-import dotenv from 'dotenv';
-import chalk from 'chalk';
-import prompts from 'prompts';
+import { Client, GatewayIntentBits, REST, Routes, ApplicationCommandData, ApplicationCommand } from "discord.js";
+import dotenv from "dotenv";
+import chalk from "chalk";
+import prompts from "prompts";
+import './common/logger';
+import { getFigletText } from "./common/figlet";
+import pkg from '../package.json';
+import { loadPlugins } from "./pluginLoader";
 
 dotenv.config();
 
-export async function deploySlashCommands(): Promise<void> {
-    console.log(chalk.green('Starting Slash Command Deployment System (Plugin-based)...'));
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const token = process.env.DISCORD_BOT_TOKEN;
 
+async function deploySlashCommands() {
+  const figletString = await getFigletText('RedFox');
+  process.stdout.write(chalk.bold(chalk.keyword('orange')(figletString) + '\n'));
+  process.stdout.write(chalk.bold(chalk.keyword('orange')(`🦊 Version ${pkg.version} | Author: ${pkg.author} 🦊\n\n`)));
+  
+  console.log("Starting Slash Command Deployment System...");
 
-    const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+  try {
+    await client.login(token);
+    console.log(`Logged in as ${chalk.bold(chalk.keyword('orange')(client.user?.tag))} for Slash Command Deployment.`);
 
-    try {
-        await client.login(process.env.DiscordToken);
-        console.log(chalk.green(`Logged in as ${client.user?.tag} for Slash Command Deployment.`));
+    const actionChoices = [
+      { title: "Register Global Commands", value: "registerGlobal" },
+      { title: "Register Test Guild Commands", value: "registerTestGuild" },
+      { title: "Delete Single Global Command", value: "deleteSingleGlobal" },
+      { title: "Delete Single Test Guild Command", value: "deleteSingleTestGuild" },
+      { title: "Delete All Global Commands", value: "deleteAllGlobal" },
+      { title: "Delete All Test Guild Commands", value: "deleteAllTestGuild" },
+    ];
 
+    const { action } = await prompts({
+      type: "select",
+      name: "action",
+      message: "What would you like to do?",
+      choices: actionChoices,
+    });
 
-        const actionChoices = [
-            { title: 'Register Global Commands', value: 'registerGlobal' },
-            { title: 'Register Test Guild Commands', value: 'registerTestGuild' },
-            { title: 'Delete Single Global Command', value: 'deleteSingleGlobal' },
-            { title: 'Delete Single Test Guild Command', value: 'deleteSingleTestGuild' },
-            { title: 'Delete All Global Commands', value: 'deleteAllGlobal' },
-            { title: 'Delete All Test Guild Commands', value: 'deleteAllTestGuild' }
-        ];
+    let commandName: string | undefined;
+    let guildId: string | undefined;
 
-        const { action } = await prompts({
-            type: 'select',
-            name: 'action',
-            message: 'What would you like to do?',
-            choices: actionChoices
-        });
-
-        let commandName: string | undefined;
-        let guildId: string | undefined;
-
-        if (action.startsWith('deleteSingle')) {
-            commandName = await promptInput('Enter the command name to delete:', 'Command name is required!');
-        }
-
-        if (action.endsWith('TestGuild')) {
-            guildId = await promptInput('Enter the test guild ID:', 'Guild ID is required!');
-        }
-
-
-        switch (action) {
-            case 'registerGlobal':
-                await registerCommands(client);
-                break;
-            case 'registerTestGuild':
-                if (!guildId) {
-                    console.error(chalk.red('Guild ID is required for test guild commands.'));
-                    break;
-                }
-                await registerCommands(client, guildId);
-                break;
-            case 'deleteSingleGlobal':
-                if (!commandName) {
-                    console.error(chalk.red('Command name is required.'));
-                    break;
-                }
-                await deleteSingleCommand(client, commandName);
-                break;
-            case 'deleteSingleTestGuild':
-                if (!commandName || !guildId) {
-                    console.error(chalk.red('Both command name and Guild ID are required.'));
-                    break;
-                }
-                await deleteSingleCommand(client, commandName, guildId);
-                break;
-            case 'deleteAllGlobal':
-                await confirmAndDeleteAll(client, 'global');
-                break;
-            case 'deleteAllTestGuild':
-                if (!guildId) {
-                    console.error(chalk.red('Guild ID is required for test guild commands.'));
-                    break;
-                }
-                await confirmAndDeleteAll(client, 'test guild', guildId);
-                break;
-            default:
-                console.log(chalk.yellow('Invalid action specified.'));
-        }
-    } catch (error) {
-        logError('Error during Slash Command Deployment:', error);
-    } finally {
-        console.log(chalk.yellow('Shutting down Slash Command Deployment System gracefully...'));
-        await client.destroy();
+    if (action.startsWith("deleteSingle")) {
+      commandName = await promptInput("Enter the command name to delete:");
     }
-}
+    
+    if (action.endsWith("TestGuild")) {
+      guildId = await promptInput("Enter the test guild ID:");
+    }
 
-
-
-
-
-async function promptInput(message: string, validationMessage = 'Input is required'): Promise<string> {
-    const response = await prompts({
-        type: 'text',
-        name: 'input',
-        message,
-        validate: (input: string) => (input ? true : validationMessage)
-    });
-    return response.input;
-}
-
-async function confirmAndDeleteAll(client: Client, type: string, guildId?: string): Promise<void> {
-    const { confirmDelete } = await prompts({
-        type: 'confirm',
-        name: 'confirmDelete',
-        message: `Are you sure you want to delete all ${type} commands?`,
-        initial: false
-    });
-    if (confirmDelete) {
-        await deleteAllCommands(client, guildId);
+    switch (action) {
+      case "registerGlobal":
+        await registerCommands(client);
+        break;
+      case "registerTestGuild":
+        if (!guildId) {
+          console.error(chalk.red("Guild ID is required for test guild commands."));
+          return;
+        }
+        await registerCommands(client, guildId);
+        break;
+      case "deleteSingleGlobal":
+        if (!commandName) return;
+        await deleteSingleCommand(client, commandName);
+        break;
+      case "deleteSingleTestGuild":
+        if (!commandName || !guildId) return;
+        await deleteSingleCommand(client, commandName, guildId);
+        break;
+      case "deleteAllGlobal":
+        await confirmAndDeleteAll(client, "global");
+        break;
+      case "deleteAllTestGuild":
+        if (!guildId) return;
+        await confirmAndDeleteAll(client, "test guild", guildId);
+        break;
+      default:
+        console.log(chalk.yellow("Invalid action specified."));
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      logError("Error during Slash Command Deployment:", error.message);
     } else {
-        console.log(chalk.green(`Deletion of all ${type} commands canceled.`));
+      logError("Error during Slash Command Deployment:", String(error));
     }
-}
-
-async function loadSlashCommands(): Promise<any[]> {
-    const commands: any[] = [];
-    const pluginsDir = path.join(__dirname, 'plugins');
-
-    if (!fs.existsSync(pluginsDir)) {
-        console.warn(chalk.yellow(`Plugins directory not found at ${pluginsDir}`));
-        return commands;
-    }
-
-
-    const pluginFolders = fs.readdirSync(pluginsDir).filter((folder) => {
-        const folderPath = path.join(pluginsDir, folder);
-        return fs.statSync(folderPath).isDirectory();
-    });
-
-
-    for (const folder of pluginFolders) {
-        const pluginFolderPath = path.join(pluginsDir, folder);
-
-        const slashCommandsFolder = path.join(pluginFolderPath, 'slashs');
-        if (fs.existsSync(slashCommandsFolder)) {
-            const commandFiles = fs
-                .readdirSync(slashCommandsFolder)
-                .filter((file) => file.endsWith('.js') || file.endsWith('.ts'));
-
-            for (const file of commandFiles) {
-                const commandPath = path.join(slashCommandsFolder, file);
-                try {
-
-                    const commandModule = await import(pathToFileURL(commandPath).href);
-                    const command = commandModule.default || commandModule;
-                    if ('data' in command && 'execute' in command) {
-                        commands.push(command.data.toJSON());
-                    } else {
-                        console.warn(
-                            chalk.yellow(
-                                `[WARNING] The command file "${file}" in plugin "${folder}" is missing "data" or "execute" property.`
-                            )
-                        );
-                    }
-                } catch (error) {
-                    logError(`Failed to load command "${file}" from plugin "${folder}":`, error);
-                }
-            }
-        }
-    }
-
-    console.info(chalk.green(`Loaded ${commands.length} slash command(s) from plugins successfully.`));
-    return commands;
+  } finally {
+    console.log(chalk.yellow("Shutting down Slash Command Deployment System gracefully..."));
+    await client.destroy();
+  }
 }
 
 async function registerCommands(client: Client, guildId?: string): Promise<void> {
-    const commands = await loadSlashCommands();
-    const rest = createRestClient();
+  // Load your plugins (make sure loadPlugins returns an array of Plugin objects)
+  const plugins = await loadPlugins(client);
+  const commands: ApplicationCommandData[] = [];
 
-    try {
-        const applicationId = client.user?.id;
-        if (!applicationId) {
-            console.error(chalk.red('Client user ID not available.'));
-            return;
-        }
-
-        const route = guildId
-            ? Routes.applicationGuildCommands(applicationId, guildId)
-            : Routes.applicationCommands(applicationId);
-
-        const data = (await rest.put(route, { body: commands })) as any[];
-        console.info(
-            chalk.green(
-                `Successfully reloaded ${data.length} ${guildId ? 'guild-specific' : 'global'} slash command(s).`
-            )
-        );
-    } catch (error) {
-        logError('Error registering commands:', error);
+  // For each plugin, push its commands into the commands array
+  for (const plugin of plugins) {
+    for (const cmd of plugin.commands) {
+      if (cmd.data) {
+        // cmd.data should conform to Discord's ApplicationCommandData structure
+        commands.push(cmd.data);
+      } else if (cmd.name && cmd.description) {
+        // Fallback if you didn't wrap your command data in a `data` property
+        commands.push({
+          name: cmd.name,
+          description: cmd.description,
+        } as ApplicationCommandData);
+      } else {
+        console.warn(chalk.yellow(`Command in plugin "${plugin.name}" is missing required data.`));
+      }
     }
+  }
+
+  console.log(chalk.green(`Found ${commands.length} commands from plugins.`));
+
+  const rest = new REST({ version: "10" }).setToken(token as string);
+  if (guildId) {
+    console.log(chalk.green(`Registering ${commands.length} commands to guild ${guildId}...`));
+    const registeredCommands = (await rest.put(
+      Routes.applicationGuildCommands(client.user!.id, guildId),
+      { body: commands }
+    )) as ApplicationCommandData[];
+    console.log(chalk.green(`${registeredCommands.length} commands registered successfully to guild ${guildId}.`));
+  } else {
+    console.log(chalk.green(`Registering ${commands.length} global commands...`));
+    const registeredCommands = (await rest.put(
+      Routes.applicationCommands(client.user!.id),
+      { body: commands }
+    )) as ApplicationCommandData[];
+    console.log(chalk.green(`${registeredCommands.length} global commands registered successfully.`));
+  }
 }
 
 async function deleteSingleCommand(client: Client, commandName: string, guildId?: string): Promise<void> {
-    const rest = createRestClient();
-    try {
-        const applicationId = client.user?.id;
-        if (!applicationId) {
-            console.error(chalk.red('Client user ID not available.'));
-            return;
-        }
-
-        const route = guildId
-            ? Routes.applicationGuildCommands(applicationId, guildId)
-            : Routes.applicationCommands(applicationId);
-
-        const commands = (await rest.get(route)) as any[];
-        const command = commands.find((cmd) => cmd.name === commandName);
-        if (!command) {
-            console.warn(chalk.yellow(`No command found with name: ${commandName}`));
-            return;
-        }
-
-        const deleteRoute = guildId
-            ? Routes.applicationGuildCommand(applicationId, guildId, command.id)
-            : Routes.applicationCommand(applicationId, command.id);
-
-        await rest.delete(deleteRoute);
-        console.log(chalk.green(`Successfully deleted command: ${commandName}`));
-    } catch (error) {
-        logError('Error deleting command:', error);
-    }
+  const rest = new REST({ version: "10" }).setToken(token as string);
+  if (guildId) {
+    console.log(chalk.green(`Deleting command "${commandName}" from guild ${guildId}...`));
+    const commands = await rest.get(Routes.applicationGuildCommands(client.user!.id, guildId)) as ApplicationCommand[];
+    const command = commands.find(cmd => cmd.name === commandName);
+    if (command) await rest.delete(Routes.applicationGuildCommand(client.user!.id, guildId, command.id));
+  } else {
+    console.log(chalk.green(`Deleting global command "${commandName}"...`));
+    const commands = await rest.get(Routes.applicationCommands(client.user!.id)) as ApplicationCommand[];
+    const command = commands.find(cmd => cmd.name === commandName);
+    if (command) await rest.delete(Routes.applicationCommand(client.user!.id, command.id));
+  }
+  console.log(chalk.green("Command deleted successfully."));
 }
 
 async function deleteAllCommands(client: Client, guildId?: string): Promise<void> {
-    const rest = createRestClient();
-    try {
-        const applicationId = client.user?.id;
-        if (!applicationId) {
-            console.error(chalk.red('Client user ID not available.'));
-            return;
-        }
-
-        const route = guildId
-            ? Routes.applicationGuildCommands(applicationId, guildId)
-            : Routes.applicationCommands(applicationId);
-
-        await rest.put(route, { body: [] });
-        console.log(chalk.green(`Successfully deleted all ${guildId ? 'guild-specific' : 'global'} commands.`));
-    } catch (error) {
-        logError('Error deleting all commands:', error);
-    }
+  const rest = new REST({ version: "10" }).setToken(token as string);
+  if (guildId) {
+    console.log(chalk.green(`Deleting all commands from guild ${guildId}...`));
+    await rest.put(Routes.applicationGuildCommands(client.user!.id, guildId), { body: [] });
+  } else {
+    console.log(chalk.green("Deleting all global commands..."));
+    await rest.put(Routes.applicationCommands(client.user!.id), { body: [] });
+  }
+  console.log(chalk.green("All commands deleted successfully."));
 }
 
-function createRestClient(): REST {
-    const token = process.env.DiscordToken;
-    if (!token) {
-        throw new Error('DiscordToken environment variable is not defined.');
-    }
-    return new REST({ version: '10' }).setToken(token);
+async function promptInput(message: string): Promise<string> {
+  const response = await prompts({
+    type: "text",
+    name: "input",
+    message,
+    validate: (input: string) => (input ? true : "Input is required!"),
+  });
+  return response.input;
+}
+
+async function confirmAndDeleteAll(client: Client, type: string, guildId?: string): Promise<void> {
+  const { confirmDelete } = await prompts({
+    type: "confirm",
+    name: "confirmDelete",
+    message: `Are you sure you want to delete all ${type} commands?`,
+    initial: false,
+  });
+  if (confirmDelete) {
+    await deleteAllCommands(client, guildId);
+  } else {
+    console.log(chalk.green(`Deletion of all ${type} commands canceled.`));
+  }
 }
 
 function logError(message: string, error: unknown): void {
-    console.error(chalk.red(message));
-    console.error(error);
+  console.error(chalk.red(message));
+  console.error(error);
 }
 
-
-const __filename: string = fileURLToPath(import.meta.url);
-const __dirname: string = path.dirname(__filename);
-if (process.argv[1] === __filename) {
-    deploySlashCommands();
-}
+deploySlashCommands();

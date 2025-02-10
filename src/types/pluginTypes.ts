@@ -1,3 +1,5 @@
+import { ApplicationCommandData } from "discord.js";
+
 export interface PluginEvent<T extends unknown[] = unknown[]> {
   name: string;
   once?: boolean;
@@ -6,6 +8,8 @@ export interface PluginEvent<T extends unknown[] = unknown[]> {
 
 export interface PluginCommand<T = unknown> {
   name: string;
+  description?: string;
+  data?: ApplicationCommandData;
   execute: (interaction: T) => void;
 }
 
@@ -21,7 +25,7 @@ export interface Plugin {
   description: string;
   author: string;
   commands: PluginCommand<unknown>[];
-  events: PluginEvent<unknown[]>[]; 
+  events: PluginEvent<unknown[]>[];
   loadOptions?: PluginLoadOptions;
 }
 

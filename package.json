@@ -30,6 +30,7 @@
   },
   "scripts": {
     "dev": "ts-node src/index.ts",
+    "deploy": "ts-node src/slashDeployer.ts",
     "lint": "eslint .",
     "start": "node dist/index.js",
     "build": "eslint . && tsc"
