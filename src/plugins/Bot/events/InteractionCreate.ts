@@ -1,15 +1,18 @@
-import { ChatInputCommandInteraction } from "discord.js";
-import { PluginEvent } from "../../../types/pluginTypes";
-import { getCommand } from "../../../common/commandRegistry";
+import { ChatInputCommandInteraction } from 'discord.js';
+import { PluginEvent } from '../../../types/pluginTypes';
+import { getCommand } from '../../../common/commandRegistry';
+import chalk from 'chalk';
 
 const interactionCreate: PluginEvent<[ChatInputCommandInteraction]> = {
-    name: "interactionCreate",
+    name: 'interactionCreate',
     execute: async (interaction) => {
         if (!interaction.isChatInputCommand()) return;
 
         const command = getCommand(interaction.commandName);
         if (!command) {
-            console.warn(`No command found for ${interaction.commandName}`);
+            console.warn(
+                chalk.yellow(`No command found for ${interaction.commandName}`),
+            );
             return;
         }
 
@@ -19,18 +22,28 @@ const interactionCreate: PluginEvent<[ChatInputCommandInteraction]> = {
             const errorMessage =
                 error instanceof Error ? error.message : String(error);
             console.error(
-                `Error executing command ${interaction.commandName}: ${errorMessage}`
+                chalk.red(
+                    `Error executing command ${interaction.commandName}: ${errorMessage}`,
+                ),
             );
 
             const response = {
-                content: "There was an error while executing that command!",
+                content: 'There was an error while executing that command!',
                 ephemeral: true,
             };
 
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp(response);
-            } else {
-                await interaction.reply(response);
+            try {
+                if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp(response);
+                } else {
+                    await interaction.reply(response);
+                }
+            } catch (replyError) {
+                console.error(
+                    chalk.red(
+                        `Failed to send error response for ${interaction.commandName}: ${replyError}`,
+                    ),
+                );
             }
         }
     },

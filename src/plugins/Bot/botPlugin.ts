@@ -7,11 +7,11 @@ const botPlugin: Plugin = {
     commands: [],
     events: [],
     loadOptions: {
-        commandsFolder: 'commands',
-        eventsFolder: 'events',
+        commandsFolder: 'Commands',
+        eventsFolder: 'Events',
         skipEvents: [],
-        skipCommands: []
-    }
+        skipCommands: [],
+    },
 };
 
 export default botPlugin;

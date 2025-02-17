@@ -1,38 +1,43 @@
 {
-  "dependencies": {
-    "@types/figlet": "^1.7.0",
-    "better-logging": "^5.0.0",
-    "chalk": "4",
-    "cli-table3": "^0.6.5",
-    "discord.js": "^14.17.3",
-    "dotenv": "^16.4.7",
-    "figlet": "^1.8.0",
-    "moment": "^2.30.1",
-    "prompts": "^2.4.2"
-  },
-  "name": "redfoxts",
-  "version": "1.0.0",
-  "main": "index.js",
-  "repository": "GuikiPT:GuikiPT/RedFoxTS.git",
-  "author": "GuikiPT",
-  "license": "MIT",
-  "devDependencies": {
-    "@eslint/js": "^9.20.0",
-    "@types/node": "^22.10.10",
-    "@types/prompts": "^2.4.9",
-    "eslint": "^9.20.0",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-prettier": "^5.2.3",
-    "prettier": "^3.5.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.7.3",
-    "typescript-eslint": "^8.23.0"
-  },
-  "scripts": {
-    "dev": "ts-node src/index.ts",
-    "deploy": "ts-node src/slashDeployer.ts",
-    "lint": "eslint .",
-    "start": "node dist/index.js",
-    "build": "eslint . && tsc"
-  }
+    "name": "redfoxts",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "scripts": {
+        "dev": "yarn build && yarn eslint && node dist/Source/index.js",
+        "deploy": "ts-node src/slashDeployer.ts",
+        "lint": "eslint .",
+        "prettier": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\"",
+        "start": "node dist/src/index.js",
+        "build": "tsc"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/GuikiPT/RedFoxTS.git"
+    },
+    "author": "GuikiPT",
+    "license": "MIT",
+    "dependencies": {
+        "@types/figlet": "^1.7.0",
+        "better-logging": "^5.0.0",
+        "chalk": "4",
+        "cli-table3": "^0.6.5",
+        "discord.js": "^14.17.3",
+        "dotenv": "^16.4.7",
+        "figlet": "^1.8.0",
+        "moment": "^2.30.1",
+        "prompts": "^2.4.2"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.20.0",
+        "@types/node": "^22.10.10",
+        "@types/prompts": "^2.4.9",
+        "eslint": "^9.20.0",
+        "eslint-config-prettier": "^10.0.1",
+        "eslint-plugin-json": "^4.0.1",
+        "eslint-plugin-prettier": "^5.2.3",
+        "prettier": "^3.5.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.7.3",
+        "typescript-eslint": "^8.23.0"
+    }
 }
