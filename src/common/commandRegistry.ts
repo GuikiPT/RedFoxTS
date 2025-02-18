@@ -19,9 +19,6 @@ export function registerCommand(command: PluginCommand): void {
         );
     }
     commands.set(command.name, command);
-    console.info(
-        chalk.green(`Command "${command.name}" registered successfully.`),
-    );
 }
 
 export function getCommand(name: string): PluginCommand | undefined {
