@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "main": "dist/index.js",
     "scripts": {
-        "dev": "yarn build && yarn eslint && node dist/Source/index.js",
+        "dev": "yarn build && yarn eslint && node dist/index.js",
         "deploy": "ts-node src/slashDeployer.ts",
         "lint": "eslint .",
         "prettier": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\"",
