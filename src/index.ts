@@ -7,6 +7,8 @@ import './common/logger';
 import chalk from 'chalk';
 import pkg from '../package.json';
 import { getFigletText } from './common/figlet';
+import sequelize from './database/sequelize';
+import UserModel from './database/models/UserModel';
 
 const client = new Client({
     intents: [
@@ -45,6 +47,16 @@ async function main() {
             );
         }
         await client.login(token);
+
+        await sequelize.authenticate();
+        console.info(
+            chalk.green('MariaDB connected successfully via Sequelize.'),
+        );
+
+        await sequelize.sync();
+        console.info(chalk.green('Sequelize models synchronized.'));
+
+        client.db = { UserModel };
     } catch (err) {
         console.error(chalk.red(`Critical error during startup: ${err}`));
         process.exit(1);

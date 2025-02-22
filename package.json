@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "main": "dist/index.js",
     "scripts": {
-        "dev": "yarn build && yarn eslint && node dist/index.js",
+        "dev": "yarn prettier && yarn build && node dist/index.js",
         "deploy": "ts-node src/slashDeployer.ts",
         "lint": "eslint .",
         "prettier": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\"",
@@ -24,8 +24,11 @@
         "discord.js": "^14.17.3",
         "dotenv": "^16.4.7",
         "figlet": "^1.8.0",
+        "mariadb": "^3.4.0",
         "moment": "^2.30.1",
-        "prompts": "^2.4.2"
+        "mysql2": "^3.12.0",
+        "prompts": "^2.4.2",
+        "sequelize": "^6.37.5"
     },
     "devDependencies": {
         "@eslint/js": "^9.20.0",
